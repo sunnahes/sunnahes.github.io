@@ -1,6 +1,6 @@
 /*
- * mapworker.js — Calcula en segundo plano el mapa global de visibilidad del
- * hilal (categorías de Yallop) para la tarde local de una fecha dada.
+ * mapworker.js — Computes in the background the global hilal visibility map
+ * (Yallop categories) for the local evening of a given date.
  */
 importScripts('../vendor/astronomy.browser.min.js', 'hilal.js');
 
@@ -18,7 +18,7 @@ self.onmessage = function (ev) {
 
   for (const lat of lats) {
     for (const lon of lons) {
-      // Mediodía local medio: 12h UTC menos 4 min por grado de longitud
+      // Mean local noon: 12h UTC minus 4 min per degree of longitude
       const localNoonMs = baseUtcNoon - lon * 240000;
       let res;
       try {

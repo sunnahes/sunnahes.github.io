@@ -1,21 +1,21 @@
 /*
- * hilal.js — Núcleo científico de cálculo de visibilidad del hilal.
+ * hilal.js — Scientific core for hilal visibility computation.
  *
- * Efemérides: Astronomy Engine (Don Cross), basada en VSOP87 (Sol/planetas)
- * y una serie ELP2000-82 truncada para la Luna; precisión ~1 minuto de arco.
+ * Ephemerides: Astronomy Engine (Don Cross), based on VSOP87 (Sun/planets)
+ * and a truncated ELP2000-82 series for the Moon; ~1 arcminute accuracy.
  *
- * Criterios implementados:
+ * Implemented criteria:
  *  - Yallop, B.D. (1997) "A Method for Predicting the First Sighting of the
  *    New Crescent Moon", NAO Technical Note No. 69, HM Nautical Almanac Office.
  *    q = (ARCV - (11.8371 - 6.3226·W' + 0.7319·W'² - 0.1018·W'³)) / 10
- *    con ARCV geocéntrico y W' = anchura topocéntrica del creciente (arcmin),
- *    evaluado en el "mejor momento" Tb = Tpuesta_sol + 4/9 · LAG.
+ *    with geocentric ARCV and W' = topocentric crescent width (arcmin),
+ *    evaluated at the "best time" Tb = Tsunset + 4/9 · LAG.
  *  - Odeh, M.Sh. (2006) "New Criterion for Lunar Crescent Visibility",
- *    Experimental Astronomy 18, 39-64 (criterio de ICOP).
+ *    Experimental Astronomy 18, 39-64 (ICOP criterion).
  *    V = ARCV - (7.1651 - 6.3226·W + 0.7319·W² - 0.1018·W³)
- *    con magnitudes topocéntricas.
- *  - Límite de Danjon (~7° de elongación): por debajo no existe creciente
- *    físicamente observable (Danjon 1932/1936).
+ *    with topocentric quantities.
+ *  - Danjon limit (~7° of elongation): below it no physically observable
+ *    crescent exists (Danjon 1932/1936).
  */
 (function (global) {
   'use strict';
@@ -24,7 +24,7 @@
   const DEG = Math.PI / 180;
   const MOON_RADIUS_KM = 1737.4;
   const EARTH_EQ_RADIUS_KM = 6378.137;
-  const SUN_PARALLAX_DEG = 8.794 / 3600; // paralaje solar media
+  const SUN_PARALLAX_DEG = 8.794 / 3600; // mean solar parallax
   const DANJON_LIMIT_DEG = 7.0;
 
   function norm180(x) {
@@ -34,7 +34,7 @@
     return x;
   }
 
-  // Separación angular (grados) entre dos posiciones (AR en horas, Dec en grados)
+  // Angular separation (degrees) between two positions (RA in hours, Dec in degrees)
   function sepDeg(ra1h, dec1, ra2h, dec2) {
     const a1 = ra1h * 15 * DEG, d1 = dec1 * DEG;
     const a2 = ra2h * 15 * DEG, d2 = dec2 * DEG;
@@ -42,8 +42,8 @@
     return Math.acos(Math.min(1, Math.max(-1, c))) / DEG;
   }
 
-  // Última luna nueva (conjunción geocéntrica) anterior o igual a `time`,
-  // y la primera posterior.
+  // Last new moon (geocentric conjunction) before or equal to `time`,
+  // and the first one after.
   function newMoonsAround(time) {
     let t = A.SearchMoonPhase(0, time.AddDays(-35), 36);
     let prev = null, next = null;
@@ -54,19 +54,19 @@
     return { prev, next };
   }
 
-  // Punto subsolar / sublunar geocéntrico (lat/lon sobre la superficie terrestre)
+  // Geocentric subsolar / sublunar point (lat/lon on the Earth's surface)
   function subPoint(body, time) {
     const vecJ = A.GeoVector(body, time, true);
     const vecD = A.RotateVector(A.Rotation_EQJ_EQD(time), vecJ);
     const eq = A.EquatorFromVector(vecD);
-    const gast = A.SiderealTime(time); // horas
+    const gast = A.SiderealTime(time); // hours
     return { lat: eq.dec, lon: norm180((eq.ra - gast) * 15) };
   }
 
-  // Estado completo de la Luna y el Sol en un instante, para un observador.
+  // Full state of the Moon and the Sun at an instant, for an observer.
   function instantData(observer, time) {
-    const eqSun = A.Equator(A.Body.Sun, time, observer, true, true);   // topocéntrico
-    const eqMoon = A.Equator(A.Body.Moon, time, observer, true, true); // topocéntrico
+    const eqSun = A.Equator(A.Body.Sun, time, observer, true, true);   // topocentric
+    const eqMoon = A.Equator(A.Body.Moon, time, observer, true, true); // topocentric
     const hSun = A.Horizon(time, observer, eqSun.ra, eqSun.dec, 'normal');
     const hMoon = A.Horizon(time, observer, eqMoon.ra, eqMoon.dec, 'normal');
     const hMoonAirless = A.Horizon(time, observer, eqMoon.ra, eqMoon.dec);
@@ -75,8 +75,8 @@
     const geoVec = A.GeoVector(A.Body.Moon, time, true);
     const distGeoKm = Math.hypot(geoVec.x, geoVec.y, geoVec.z) * A.KM_PER_AU;
 
-    const sdArcmin = (Math.asin(MOON_RADIUS_KM / distTopoKm) / DEG) * 60;       // semidiámetro topocéntrico
-    const parallaxDeg = Math.asin(EARTH_EQ_RADIUS_KM / distGeoKm) / DEG;        // paralaje horizontal ecuatorial
+    const sdArcmin = (Math.asin(MOON_RADIUS_KM / distTopoKm) / DEG) * 60;       // topocentric semidiameter
+    const parallaxDeg = Math.asin(EARTH_EQ_RADIUS_KM / distGeoKm) / DEG;        // equatorial horizontal parallax
 
     const illum = A.Illumination(A.Body.Moon, time);
     const phaseAngle = illum.phase_angle;
@@ -84,7 +84,7 @@
 
     const elongGeo = A.Elongation(A.Body.Moon, time).elongation;
     const elongTopo = sepDeg(eqMoon.ra, eqMoon.dec, eqSun.ra, eqSun.dec);
-    const phaseLon = A.MoonPhase(time); // diferencia de longitud eclíptica Luna-Sol, 0..360
+    const phaseLon = A.MoonPhase(time); // Moon-Sun ecliptic longitude difference, 0..360
 
     const ecl = A.EclipticGeoMoon ? A.EclipticGeoMoon(time) : null;
     const nm = newMoonsAround(time);
@@ -118,12 +118,12 @@
     };
   }
 
-  // Parámetros de los criterios de visibilidad en un instante dado.
+  // Visibility-criteria parameters at a given instant.
   function criteria(observer, time, conjunction) {
     const eqSun = A.Equator(A.Body.Sun, time, observer, true, true);
     const eqMoon = A.Equator(A.Body.Moon, time, observer, true, true);
-    const hSun = A.Horizon(time, observer, eqSun.ra, eqSun.dec);   // sin refracción
-    const hMoon = A.Horizon(time, observer, eqMoon.ra, eqMoon.dec); // sin refracción
+    const hSun = A.Horizon(time, observer, eqSun.ra, eqSun.dec);   // no refraction
+    const hMoon = A.Horizon(time, observer, eqMoon.ra, eqMoon.dec); // no refraction
 
     const distTopoKm = eqMoon.dist * A.KM_PER_AU;
     const geoVec = A.GeoVector(A.Body.Moon, time, true);
@@ -134,13 +134,13 @@
     const arclTopo = sepDeg(eqMoon.ra, eqMoon.dec, eqSun.ra, eqSun.dec);
     const arclGeo = A.Elongation(A.Body.Moon, time).elongation;
     const arcvTopo = hMoon.altitude - hSun.altitude;
-    // ARCV geocéntrico: se corrige la altitud topocéntrica por paralaje
+    // Geocentric ARCV: the topocentric altitude is corrected for parallax
     const arcvGeo = arcvTopo + parallaxDeg * Math.cos(hMoon.altitude * DEG)
                              - SUN_PARALLAX_DEG * Math.cos(hSun.altitude * DEG);
     const daz = norm180(hSun.azimuth - hMoon.azimuth);
 
-    const wTopo = sdTopo * (1 - Math.cos(arclTopo * DEG));   // anchura topocéntrica (Odeh)
-    const wYallop = sdTopo * (1 - Math.cos(arclGeo * DEG));  // anchura según Yallop (SD' topo, ARCL geo)
+    const wTopo = sdTopo * (1 - Math.cos(arclTopo * DEG));   // topocentric width (Odeh)
+    const wYallop = sdTopo * (1 - Math.cos(arclGeo * DEG));  // width per Yallop (topo SD', geo ARCL)
 
     const q = (arcvGeo - (11.8371 - 6.3226 * wYallop + 0.7319 * wYallop ** 2 - 0.1018 * wYallop ** 3)) / 10;
     const V = arcvTopo - (7.1651 - 6.3226 * wTopo + 0.7319 * wTopo ** 2 - 0.1018 * wTopo ** 3);
@@ -180,17 +180,17 @@
   }
 
   /*
-   * Análisis del hilal para la tarde local cuyo mediodía (en UTC, ms) se indica.
-   * Devuelve puesta de sol, puesta de luna, LAG, mejor momento (Yallop),
-   * conjunción previa/siguiente y los criterios evaluados en el mejor momento.
+   * Hilal analysis for the local evening whose noon (in UTC, ms) is given.
+   * Returns sunset, moonset, LAG, best time (Yallop), previous/next
+   * conjunction and the criteria evaluated at the best time.
    */
   function evening(observer, localNoonUtcMs) {
     const t0 = A.MakeTime(new Date(localNoonUtcMs));
     const sunset = A.SearchRiseSet(A.Body.Sun, observer, -1, t0, 1.2);
     if (!sunset) return { polar: true };
 
-    // Buscamos la puesta de luna desde unas horas antes de la puesta de sol
-    // para detectar LAG negativo (la Luna se pone antes que el Sol).
+    // Search for moonset starting a few hours before sunset, to detect a
+    // negative LAG (the Moon setting before the Sun).
     const moonset = A.SearchRiseSet(A.Body.Moon, observer, -1, sunset.AddDays(-0.3), 1.5);
     const moonrise = A.SearchRiseSet(A.Body.Moon, observer, +1, t0, 1.5);
     const lagMin = moonset ? (moonset.ut - sunset.ut) * 1440 : null;
@@ -203,7 +203,7 @@
     const crit = criteria(observer, bestTime, prev);
     const atSunset = criteria(observer, sunset, prev);
 
-    let verdict; // key: identificador estable para traducción en la UI
+    let verdict; // key: stable identifier for translation in the UI
     if (lagMin !== null && lagMin <= 0) {
       verdict = { code: 'S', key: 'v_lagneg', text: 'No visible: la Luna se pone antes que el Sol (LAG ≤ 0).' };
     } else if (crit.altMoon <= 0) {
@@ -227,11 +227,11 @@
   }
 
   /*
-   * Punto del mapa global de visibilidad (versión ligera para el worker).
-   * nmUts: instantes UT (días julianos UT de Astronomy Engine) de las lunas
-   * nuevas próximas a la fecha, precalculados en el hilo principal.
-   * Devuelve { cat, q } donde cat ∈ A..F | S (Luna bajo el horizonte al
-   * ponerse el Sol) | P (sin puesta de sol: latitud polar).
+   * Global visibility-map point (lightweight version for the worker).
+   * nmUts: UT instants (Astronomy Engine UT Julian days) of the new moons
+   * near the date, precomputed on the main thread.
+   * Returns { cat, q } where cat ∈ A..F | S (Moon below the horizon at
+   * sunset) | P (no sunset: polar latitude).
    */
   function mapPoint(latDeg, lonDeg, localNoonUtcMs, nmUts) {
     const observer = new A.Observer(latDeg, lonDeg, 0);
@@ -241,9 +241,9 @@
 
     let prevUt = null;
     for (const ut of nmUts) if (ut <= sunset.ut) prevUt = ut;
-    if (prevUt === null) return { cat: 'N', q: null }; // conjunción aún no ocurrida
+    if (prevUt === null) return { cat: 'N', q: null }; // conjunction not yet occurred
 
-    // Altitud de la Luna (sin refracción) en la puesta de sol
+    // Moon altitude (no refraction) at sunset
     const eqM = A.Equator(A.Body.Moon, sunset, observer, true, true);
     const hM = A.Horizon(sunset, observer, eqM.ra, eqM.dec);
     if (hM.altitude <= 0) return { cat: 'S', q: null };
@@ -259,37 +259,37 @@
   }
 
   /*
-   * Tiempos de oración (salat) con definiciones astronómicas:
-   *  - Fajr: el Sol asciende por el ángulo de alba (p. ej. −18°) → hasta el orto.
-   *  - Dhuhr: paso del Sol por el meridiano (mediodía solar).
-   *  - Asr: cuando la sombra de un objeto = factor×objeto + sombra meridiana,
-   *    es decir, altitud solar h tal que cot h = factor + tan|φ−δ|.
-   *  - Maghrib: puesta de sol.
-   *  - Isha: el Sol desciende por el ángulo de crepúsculo, o bien un intervalo
-   *    fijo tras el maghrib (convención Umm al-Qura: +90 min).
-   *  - Medianoche islámica: punto medio entre la puesta de sol y el alba
-   *    siguiente; último tercio de la noche para el qiyam.
-   * Las horas oficiales de cada país pueden añadir minutos de cautela.
+   * Prayer (salat) times with astronomical definitions:
+   *  - Fajr: the Sun rises through the dawn angle (e.g. −18°) → until sunrise.
+   *  - Dhuhr: the Sun crosses the meridian (solar noon).
+   *  - Asr: when an object's shadow = factor×object + meridian shadow,
+   *    i.e. solar altitude h such that cot h = factor + tan|φ−δ|.
+   *  - Maghrib: sunset.
+   *  - Isha: the Sun descends through the twilight angle, or a fixed
+   *    interval after maghrib (Umm al-Qura convention: +90 min).
+   *  - Islamic midnight: midpoint between sunset and the next dawn;
+   *    last third of the night for qiyam.
+   * Each country's official times may add minutes of caution.
    */
   function prayerTimes(observer, localNoonUtcMs, opts) {
     opts = opts || {};
     const fajrAngle = opts.fajrAngle === undefined ? 18 : opts.fajrAngle;
     const ishaAngle = opts.ishaAngle;
-    const ishaInterval = opts.ishaInterval; // minutos tras el maghrib
+    const ishaInterval = opts.ishaInterval; // minutes after maghrib
     const asrFactor = opts.asrFactor === undefined ? 1 : opts.asrFactor;
 
-    const t0 = A.MakeTime(new Date(localNoonUtcMs - 12 * 3600 * 1000)); // ~medianoche local
-    const dhuhr = A.SearchHourAngle(A.Body.Sun, observer, 0, t0).time;  // tránsito
+    const t0 = A.MakeTime(new Date(localNoonUtcMs - 12 * 3600 * 1000)); // ~local midnight
+    const dhuhr = A.SearchHourAngle(A.Body.Sun, observer, 0, t0).time;  // transit
     const sunrise = A.SearchRiseSet(A.Body.Sun, observer, +1, t0, 1.2);
     const sunset = A.SearchRiseSet(A.Body.Sun, observer, -1, dhuhr, 1.0);
 
     let fajr = A.SearchAltitude(A.Body.Sun, observer, +1, t0, 1.0, -fajrAngle);
-    if (fajr && sunrise && fajr.ut > sunrise.ut) fajr = null; // lat. alta: sin alba a ese ángulo
+    if (fajr && sunrise && fajr.ut > sunrise.ut) fajr = null; // high latitude: no dawn at that angle
 
     let asr = null;
     if (dhuhr) {
       const eq = A.Equator(A.Body.Sun, dhuhr, observer, true, true);
-      const s0 = Math.tan(Math.abs(observer.latitude - eq.dec) * DEG); // sombra meridiana
+      const s0 = Math.tan(Math.abs(observer.latitude - eq.dec) * DEG); // meridian shadow
       const hAsr = Math.atan(1 / (asrFactor + s0)) / DEG;
       asr = A.SearchAltitude(A.Body.Sun, observer, -1, dhuhr, 0.6, hAsr);
     }
@@ -311,7 +311,7 @@
     return { fajr, sunrise, dhuhr, asr, sunset, isha, fajrNext, midnight, lastThird };
   }
 
-  // Próximas n lunaciones (conjunciones geocéntricas) a partir de una fecha.
+  // Next n lunations (geocentric conjunctions) from a date.
   function nextNewMoons(fromDate, n) {
     const out = [];
     let t = A.SearchMoonPhase(0, A.MakeTime(fromDate), 40);

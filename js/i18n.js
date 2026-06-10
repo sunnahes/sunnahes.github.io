@@ -1,11 +1,11 @@
-/* i18n.js — idiomas (inglés por defecto, castellano). El HTML estático está
- * en inglés; ambos diccionarios contienen todas las cadenas (estáticas y
- * dinámicas). El idioma se resuelve por ?lang= en la URL o localStorage. */
+/* i18n.js — languages (English by default, Spanish). The static HTML is in
+ * English; both dictionaries contain every string (static and dynamic). The
+ * language is resolved from ?lang= in the URL or localStorage. */
 (function () {
   'use strict';
 
   const en = {
-    // ---- estático (data-i18n) ----
+    // ---- static (data-i18n) ----
     title: 'HilalScope — Crescent moon visibility and Islamic months',
     subtitle: 'Crescent moon visibility and the start of the Islamic months, from astronomy.',
     tab_simple: 'Simple', tab_adv: 'Advanced',
@@ -81,7 +81,7 @@
     m_geo: 'Geocoding: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener">Nominatim</a> © OpenStreetMap contributors.',
     footer: 'This site performs astronomical calculations; the official declaration of the Islamic months rests with each country’s authority (sighting or calculation).',
 
-    // ---- dinámico (app.js) ----
+    // ---- dynamic (app.js) ----
     verdict_polar: 'No sunset on this date and latitude (polar region): the evening hilal criterion does not apply.',
     note_old: (d) => `Note: the Moon is already ${d} days old; this is not a young hilal. To assess the start of a month, go to the first evening after a conjunction (new moons table).`,
     ev_conj_prev: 'Previous conjunction (geocentric new moon)',
@@ -173,7 +173,7 @@
   };
 
   const es = {
-    // ---- estático (data-i18n) ----
+    // ---- static (data-i18n) ----
     title: "HilalScope — Visibilidad del creciente lunar y meses islámicos",
     view_2d: "Mapa 2D",
     view_3d: "Globo 3D",
@@ -242,7 +242,7 @@
     m_geo: "Geocodificación: <a href=\"https://nominatim.openstreetmap.org/\" target=\"_blank\" rel=\"noopener\">Nominatim</a> © colaboradores de OpenStreetMap.",
     footer: "\n    Esta web realiza cálculos astronómicos; la declaración oficial de los meses islámicos depende de la autoridad de cada país (avistamiento o cálculo).\n  ",
     search_ph: "Buscar ciudad o lugar… (ej. Mecca, Rabat, Córdoba)",
-    // ---- dinámico (app.js) ----
+    // ---- dynamic (app.js) ----
     verdict_polar: 'Sin puesta de sol en esta fecha y latitud (región polar): el criterio del hilal vespertino no es aplicable.',
     note_old: (d) => `Nota: la Luna ya tiene ${d} días; no es un hilal tierno. Para evaluar el inicio de mes, sitúate en la primera tarde tras una conjunción (tabla de lunas nuevas).`,
     ev_conj_prev: 'Conjunción previa (luna nueva geocéntrica)',
@@ -334,7 +334,7 @@
   };
 
   const dicts = { en, es };
-  // ?lang= en la URL tiene prioridad (permite enlaces hreflang por idioma)
+  // ?lang= in the URL takes priority (enables per-language hreflang links)
   let lang = new URLSearchParams(location.search).get('lang') ||
              localStorage.getItem('hilal-lang');
   if (lang !== 'en' && lang !== 'es') lang = 'en';
@@ -360,6 +360,6 @@
     locale: () => (lang === 'es' ? 'es-ES' : 'en-GB')
   };
 
-  // Aplica el idioma ya: los textos estáticos no dependen de que app.js arranque
+  // Apply the language now: static texts do not depend on app.js starting
   apply();
 })();

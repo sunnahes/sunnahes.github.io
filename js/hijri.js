@@ -1,14 +1,15 @@
 /*
- * hijri.js — Conversión gregoriano ⇄ hijri.
+ * hijri.js — Gregorian ⇄ Hijri conversion.
  *
- * Variantes:
- *  - 'islamic-umalqura': calendario civil oficial saudí Umm al-Qura (KACST),
- *    implementado por ICU y expuesto vía Intl. Datos válidos aprox. 1300-1600 AH.
- *  - 'islamic-civil': calendario tabular (aritmético, época del jueves/viernes),
- *    usado históricamente como aproximación.
+ * Variants:
+ *  - 'islamic-umalqura': the official Saudi civil calendar Umm al-Qura
+ *    (KACST), implemented by ICU and exposed via Intl. Data valid roughly
+ *    1300-1600 AH.
+ *  - 'islamic-civil': tabular calendar (arithmetic, Thursday/Friday epoch),
+ *    historically used as an approximation.
  *
- * Nota: el día islámico comienza en el maghrib (puesta de sol); estas
- * conversiones siguen la convención civil (medianoche a medianoche).
+ * Note: the Islamic day begins at maghrib (sunset); these conversions follow
+ * the civil convention (midnight to midnight).
  */
 (function (global) {
   'use strict';
@@ -29,28 +30,29 @@
     return fmtCache[variant];
   }
 
-  // Fecha hijri (y/m/d) del día civil UTC de `date`
+  // Hijri date (y/m/d) of the UTC civil day of `date`
   function fromGregorian(date, variant) {
     const parts = {};
     for (const { type, value } of getFmt(variant).formatToParts(date)) parts[type] = value;
     return { y: parseInt(parts.year, 10), m: parseInt(parts.month, 10), d: parseInt(parts.day, 10) };
   }
 
-  // Estimación tabular del día juliano de una fecha hijri
+  // Tabular estimate of the Julian day of a Hijri date
   function estJdn(hy, hm, hd) {
     return Math.floor(hd + Math.ceil(29.5 * (hm - 1)) + (hy - 1) * 354 +
       Math.floor((3 + 11 * hy) / 30) + 1948440 - 1);
   }
 
   function jdnToDate(jdn) {
-    // Devuelve la fecha a las 12:00 UTC de ese día civil
+    // Returns the date at 12:00 UTC of that civil day
     return new Date((jdn - 2440588) * 86400000 + 12 * 3600000);
   }
 
   /*
-   * Hijri → gregoriano: estima con el calendario tabular y refina comparando
-   * con la salida de Intl. Devuelve un Date a las 12:00 UTC del día civil,
-   * o null si la fecha no existe en esa variante (p. ej. día 30 de un mes de 29).
+   * Hijri → Gregorian: estimates with the tabular calendar and refines by
+   * comparing against Intl's output. Returns a Date at 12:00 UTC of the civil
+   * day, or null if the date does not exist in that variant (e.g. day 30 of
+   * a 29-day month).
    */
   function toGregorian(hy, hm, hd, variant) {
     if (!(hy >= 1 && hm >= 1 && hm <= 12 && hd >= 1 && hd <= 30)) return null;

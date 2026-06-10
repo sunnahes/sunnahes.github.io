@@ -1,10 +1,10 @@
 /*
- * Test de cordura del núcleo científico.
- * Valida contra hechos publicados:
- *  - Eclipse solar anular del 17/02/2026: luna nueva a las 12:01 UTC (NASA).
- *  - Eclipse solar total del 12/08/2026: luna nueva a las 17:46 UTC (NASA).
- *  - Inicio de Ramadán 1444 (Umm al-Qura): 1 Ramadán 1444 = 23/03/2023.
- *  - Conjunción de marzo 2023: 21/03/2023 17:23 UTC.
+ * Sanity test of the scientific core.
+ * Validates against published facts:
+ *  - Annular solar eclipse of 2026-02-17: new moon at 12:01 UTC (NASA).
+ *  - Total solar eclipse of 2026-08-12: new moon at 17:46 UTC (NASA).
+ *  - Start of Ramadan 1444 (Umm al-Qura): 1 Ramadan 1444 = 2023-03-23.
+ *  - March 2023 conjunction: 2023-03-21 17:23 UTC.
  */
 const A = require('../vendor/astronomy.browser.min.js');
 globalThis.Astronomy = A;
@@ -19,7 +19,7 @@ function check(name, cond, detail) {
   if (!cond) failures++;
 }
 
-// 1. Conjunciones = instantes de eclipses solares conocidos
+// 1. Conjunctions = instants of known solar eclipses
 const nmFeb = A.SearchMoonPhase(0, A.MakeTime(new Date(Date.UTC(2026, 1, 1))), 30);
 check('Luna nueva feb 2026 ≈ 2026-02-17 12:01 UTC (eclipse anular)',
   Math.abs(nmFeb.date.getTime() - Date.UTC(2026, 1, 17, 12, 1)) < 5 * 60000,
@@ -35,8 +35,8 @@ check('Luna nueva mar 2023 ≈ 2023-03-21 17:23 UTC',
   Math.abs(nmMar23.date.getTime() - Date.UTC(2023, 2, 21, 17, 23)) < 5 * 60000,
   nmMar23.date.toISOString());
 
-// 2. Hilal en La Meca, tardes del 21, 22 y 23 de marzo de 2023
-//    (mediodía local de La Meca = 09:00 UTC)
+// 2. Hilal in Mecca, evenings of 21, 22 and 23 March 2023
+//    (Mecca local noon = 09:00 UTC)
 const mecca = new A.Observer(21.4225, 39.8262, 300);
 for (const [day, expect] of [[21, 'imposible'], [22, 'marginal'], [23, 'facil']]) {
   const ev = H.evening(mecca, Date.UTC(2023, 2, day, 9, 0));
@@ -51,19 +51,19 @@ for (const [day, expect] of [[21, 'imposible'], [22, 'marginal'], [23, 'facil']]
   }
 }
 
-// 3. Coherencia puesta de sol de La Meca el 22/03/2023 (≈ 15:3x UTC)
+// 3. Consistency of Mecca's sunset on 2023-03-22 (≈ 15:3x UTC)
 const ev22 = H.evening(mecca, Date.UTC(2023, 2, 22, 9, 0));
 check('Puesta de sol Meca 2023-03-22 entre 15:25 y 15:45 UTC',
   ev22.sunset.date.getUTCHours() === 15 && ev22.sunset.date.getUTCMinutes() >= 25 && ev22.sunset.date.getUTCMinutes() <= 45,
   ev22.sunset.date.toISOString());
 
-// 4. Calendario: 1 Ramadán 1444 (Umm al-Qura) = 23/03/2023
+// 4. Calendar: 1 Ramadan 1444 (Umm al-Qura) = 2023-03-23
 const g = HJ.toGregorian(1444, 9, 1, 'islamic-umalqura');
 check('1 Ramadán 1444 AH (Umm al-Qura) = 2023-03-23',
   g && g.getUTCFullYear() === 2023 && g.getUTCMonth() === 2 && g.getUTCDate() === 23,
   g ? g.toISOString().slice(0, 10) : 'null');
 
-// Ida y vuelta hijri para 60 días alrededor de hoy
+// Hijri round trip for 60 days around today
 let rt = true;
 for (let i = -30; i <= 30; i++) {
   const dt = new Date(Date.now() + i * 86400000);
@@ -74,12 +74,12 @@ for (let i = -30; i <= 30; i++) {
 }
 check('Conversión hijri ⇄ gregoriano: ida y vuelta (±30 días)', rt);
 
-// 5. mapPoint funciona y da categoría coherente con evening()
+// 5. mapPoint works and gives a category consistent with evening()
 const mp = H.mapPoint(21.4225, 39.8262, Date.UTC(2023, 2, 23, 9, 0),
   [nmMar23.ut]);
 check('mapPoint Meca 2023-03-23 = categoría A', mp.cat === 'A', JSON.stringify(mp));
 
-// 6. instantData no lanza y da datos razonables
+// 6. instantData does not throw and gives reasonable data
 const inst = H.instantData(mecca, A.MakeTime(new Date(Date.UTC(2023, 2, 23, 15, 45))));
 check('instantData: distancia lunar 356k-407k km',
   inst.moon.distGeoKm > 356000 && inst.moon.distGeoKm < 407000,
@@ -88,9 +88,9 @@ check('instantData: iluminación 0-10% (luna de ~2 días)',
   inst.illumFrac > 0 && inst.illumFrac < 0.10,
   (inst.illumFrac * 100).toFixed(2) + ' %');
 
-// 7. Frontera de la zona "Luna sobre el horizonte" (casquete de 90° en torno
-//    al punto sublunar): la altitud topocéntrica de la Luna allí debe ser ≈ 0
-//    (±1.2° por paralaje y porque el casquete usa geometría geocéntrica).
+// 7. Boundary of the "Moon above the horizon" zone (90° cap around the
+//    sublunar point): the Moon's topocentric altitude there must be ≈ 0
+//    (±1.2° due to parallax and because the cap uses geocentric geometry).
 {
   const DEG = Math.PI / 180;
   const t = A.MakeTime(new Date(Date.UTC(2026, 5, 16, 18, 0)));
@@ -101,14 +101,14 @@ check('instantData: iluminación 0-10% (luna de ~2 días)',
     const phi = -Math.atan(Math.cos((lon - sub.lon) * DEG) / Math.tan(sub.lat * DEG)) / DEG;
     const obs = new A.Observer(phi, lon, 0);
     const eq = A.Equator(A.Body.Moon, t, obs, true, true);
-    const hor = A.Horizon(t, obs, eq.ra, eq.dec); // sin refracción
+    const hor = A.Horizon(t, obs, eq.ra, eq.dec); // no refraction
     maxAbs = Math.max(maxAbs, Math.abs(hor.altitude));
   }
   check('Frontera del casquete lunar: |altitud de la Luna| < 1.2°', maxAbs < 1.2,
     'desviación máx = ' + maxAbs.toFixed(3) + '°');
 }
 
-// 8. Tiempos de salat (La Meca, 2026-06-10, método Umm al-Qura)
+// 8. Salat times (Mecca, 2026-06-10, Umm al-Qura method)
 {
   const DEG = Math.PI / 180;
   const pt = H.prayerTimes(mecca, Date.UTC(2026, 5, 10, 9, 0),
@@ -119,15 +119,15 @@ check('instantData: iluminación 0-10% (luna de ~2 días)',
   check('Salat: orden fajr < orto < dhuhr < asr < ocaso < isha < alba siguiente', !!order,
     order ? [pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.sunset, pt.isha].map(t => t.date.toISOString().slice(11, 16)).join(' ') + ' UTC' : 'faltan tiempos');
 
-  // Altitud solar en el fajr = −18,5° (sin refracción)
+  // Solar altitude at fajr = −18.5° (no refraction)
   const eqF = A.Equator(A.Body.Sun, pt.fajr, mecca, true, true);
   const altF = A.Horizon(pt.fajr, mecca, eqF.ra, eqF.dec).altitude;
   check('Salat: altitud del Sol en fajr ≈ −18,5°', Math.abs(altF + 18.5) < 0.05, altF.toFixed(3) + '°');
 
-  // Isha = maghrib + 90 min exactos (regla Umm al-Qura)
+  // Isha = maghrib + exactly 90 min (Umm al-Qura rule)
   check('Salat: isha = maghrib + 90 min', Math.abs((pt.isha.ut - pt.sunset.ut) * 1440 - 90) < 0.01);
 
-  // Condición de sombra en el asr: cot(alt) = 1 + tan|φ−δ|
+  // Asr shadow condition: cot(alt) = 1 + tan|φ−δ|
   const eqA = A.Equator(A.Body.Sun, pt.asr, mecca, true, true);
   const altA = A.Horizon(pt.asr, mecca, eqA.ra, eqA.dec).altitude;
   const eqN = A.Equator(A.Body.Sun, pt.dhuhr, mecca, true, true);
@@ -135,7 +135,7 @@ check('instantData: iluminación 0-10% (luna de ~2 días)',
   check('Salat: altitud del Sol en asr cumple la condición de sombra', Math.abs(altA - expected) < 0.05,
     `alt=${altA.toFixed(3)}° esperado=${expected.toFixed(3)}°`);
 
-  // Medianoche islámica = punto medio ocaso→alba
+  // Islamic midnight = midpoint sunset→dawn
   const mid = (pt.sunset.ut + pt.fajrNext.ut) / 2;
   check('Salat: medianoche islámica en el punto medio de la noche', Math.abs(pt.midnight.ut - mid) < 1e-6);
 }

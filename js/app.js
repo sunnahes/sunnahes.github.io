@@ -1,4 +1,4 @@
-/* app.js — UI: mapa 2D / globo 3D, búsqueda de lugares, fecha/hora local, paneles de datos. */
+/* app.js — UI: 2D map / 3D globe, place search, local date/time, data panels. */
 (function () {
   'use strict';
 
@@ -6,7 +6,7 @@
   const H = window.Hilal;
   const HJ = window.Hijri;
   const I18N = window.I18N;
-  const tt = I18N.t; // traducción (t queda libre como variable local de tiempo)
+  const tt = I18N.t; // translation (t stays free as a local time variable)
   const $ = (id) => document.getElementById(id);
   const DEG = Math.PI / 180;
 
@@ -15,19 +15,19 @@
     E: '#ff3d00', F: '#7f0000', S: '#546e7a', N: '#37474f', P: '#263238'
   };
 
-  // ---------- Estado ----------
+  // ---------- State ----------
   const state = {
     loc: { lat: 21.4225, lon: 39.8262, elev: 300, name: 'La Meca (Makkah), Arabia Saudí', tz: 'Asia/Riyadh' },
-    when: new Date(),   // instante UTC seleccionado
-    mapPoints: [],      // mapa global de visibilidad (worker)
+    when: new Date(),   // selected UTC instant
+    mapPoints: [],      // global visibility map (worker)
     mapRes: 4
   };
 
-  // ---------- Zonas horarias ----------
+  // ---------- Time zones ----------
   function tzFor(lat, lon) {
-    try { if (typeof tzlookup === 'function') return tzlookup(lat, lon); } catch (e) { /* fuera de rango */ }
+    try { if (typeof tzlookup === 'function') return tzlookup(lat, lon); } catch (e) { /* out of range */ }
     const off = Math.round(lon / 15);
-    return 'Etc/GMT' + (off === 0 ? '' : (off > 0 ? '-' : '+') + Math.abs(off)); // signo invertido (POSIX)
+    return 'Etc/GMT' + (off === 0 ? '' : (off > 0 ? '-' : '+') + Math.abs(off)); // inverted sign (POSIX)
   }
 
   function partsInZone(date, tz) {
@@ -40,7 +40,7 @@
     return { y: +p.year, m: +p.month, d: +p.day, hh: (+p.hour) % 24, mm: +p.minute, ss: +p.second };
   }
 
-  // Hora civil (pared) en una zona → instante UTC
+  // Civil (wall) time in a zone → UTC instant
   function zonedTimeToUtc(y, m, d, hh, mm, tz) {
     const target = Date.UTC(y, m - 1, d, hh, mm, 0);
     let guess = target;
@@ -76,15 +76,15 @@
   }
   const shortName = (s) => (s || '').split(',').slice(0, 2).join(',');
 
-  // ---------- Geometría: casquetes de 90° (noche / visibilidad lunar) ----------
+  // ---------- Geometry: 90° caps (night / lunar visibility) ----------
   /*
-   * Frontera del casquete de radio 90° centrado en (latC, lonC): es un círculo
-   * máximo que corta cada meridiano una sola vez en
+   * Boundary of the 90°-radius cap centred at (latC, lonC): it is a great
+   * circle that crosses each meridian exactly once at
    *   φ(λ) = −atan( cos(λ−λc) / tan φc ),
-   * y la región se cierra por el polo indicado (poleSign = ±1).
-   *  - Noche: centro = punto subsolar, se cierra por el polo opuesto al Sol.
-   *  - Luna visible (sobre el horizonte): centro = punto sublunar, se cierra
-   *    por el polo del mismo hemisferio que la Luna.
+   * and the region is closed through the given pole (poleSign = ±1).
+   *  - Night: centre = subsolar point, closed through the pole opposite the Sun.
+   *  - Moon visible (above the horizon): centre = sublunar point, closed
+   *    through the pole of the Moon's own hemisphere.
    */
   function capRing(latC, lonC, poleSign, step) {
     let phiC = latC * DEG;
@@ -94,7 +94,7 @@
       const phi = -Math.atan(Math.cos((lon - lonC) * DEG) / Math.tan(phiC)) / DEG;
       ring.push([lon, phi]);
     }
-    const curveLen = ring.length; // la parte de curva (para trazar solo la frontera)
+    const curveLen = ring.length; // the curved part (to stroke only the boundary)
     ring.push([180, poleSign * 89.99], [-180, poleSign * 89.99], [ring[0][0], ring[0][1]]);
     return { ring, curveLen };
   }
@@ -110,14 +110,14 @@
     };
   }
 
-  // ---------- Franjas de salat proyectadas sobre el mapa ----------
+  // ---------- Salat periods projected on the map ----------
   /*
-   * En un instante dado, la franja vigente en cada punto del planeta depende
-   * solo de la posición del Sol respecto a ese punto: su ángulo horario local
-   * T (0..360°, contado desde el mediodía solar) y los ángulos horarios en que
-   * se cruzan el horizonte (−0,833°), el alba/crepúsculo (ángulo del método) y
-   * la condición de sombra del asr. Todo es analítico (sin búsquedas), así que
-   * el planeta entero se rasteriza por píxel.
+   * At a given instant, the period in force at each point on the planet
+   * depends only on the Sun's position relative to that point: its local hour
+   * angle T (0..360°, measured from solar noon) and the hour angles at which
+   * the horizon (−0.833°), dawn/twilight (the method's angle) and the asr
+   * shadow condition are crossed. Everything is analytic (no searches), so
+   * the whole planet is rasterised per pixel.
    */
   const BAND_COLORS = {
     dhuhr: [255, 213, 79, 70],
@@ -135,7 +135,7 @@
     return { fajrAngle: m.fajrAngle, ishaAngle: m.ishaAngle, ishaInterval: m.ishaInterval, asrFactor: +$('salat-asr').value };
   }
 
-  // Parámetros que solo dependen de la latitud (constantes por fila del raster)
+  // Parameters that depend only on latitude (constant per raster row)
   function salatRowParams(latDeg, sun, opts) {
     const phi = latDeg * DEG, dec = sun.lat * DEG;
     const sp = Math.sin(phi), cp = Math.cos(phi), sd = Math.sin(dec), cd = Math.cos(dec);
@@ -145,13 +145,13 @@
     if (c0 > 1) return { polarNight: true };
     const H0 = Math.acos(c0) / DEG;
     const cf = cosCross(-opts.fajrAngle);
-    // Si el Sol no baja al ángulo del alba (noches blancas), se usa el orto/ocaso
+    // If the Sun never reaches the dawn angle (white nights), sunrise/sunset is used
     const Hf = cf <= -1 ? 180 : (cf >= 1 ? H0 : Math.acos(cf) / DEG);
     const nightLen = (360 - Hf) - H0;
     const Tmid = H0 + nightLen / 2, TL = H0 + nightLen * 2 / 3;
     let Hisha;
     if (opts.ishaInterval !== undefined && opts.ishaInterval !== null) {
-      Hisha = H0 + opts.ishaInterval * 0.25068; // el Sol recorre ~0,25°/min
+      Hisha = H0 + opts.ishaInterval * 0.25068; // the Sun moves ~0.25°/min
     } else {
       const ci = cosCross(-opts.ishaAngle);
       Hisha = ci <= -1 ? 180 : (ci >= 1 ? Tmid : Math.acos(ci) / DEG);
@@ -165,8 +165,8 @@
     if (rp.polarDay) return null;
     if (rp.polarNight) return 'polar';
     let T = (lonDeg - sunLon) % 360;
-    if (T < 0) T += 360; // 0..360 desde el mediodía solar local
-    if (T < rp.H0) { // tarde con el Sol sobre el horizonte
+    if (T < 0) T += 360; // 0..360 from local solar noon
+    if (T < rp.H0) { // afternoon with the Sun above the horizon
       const h = Math.asin(rp.sp * rp.sd + rp.cp * rp.cd * Math.cos((lonDeg - sunLon) * DEG)) / DEG;
       return h <= rp.hAsr ? 'asr' : 'dhuhr';
     }
@@ -175,11 +175,11 @@
     if (T < rp.TL) return 'night';
     if (T < 360 - rp.Hf) return 'lastthird';
     if (T < 360 - rp.H0) return 'fajr';
-    return null; // mañana: del orto al mediodía no hay franja obligatoria
+    return null; // morning: from sunrise to noon there is no obligatory period
   }
 
-  // Rótulo de cada rezo en el centro longitudinal de su franja, a la latitud
-  // subsolar (ahí la geometría diurna es regular y nunca polar).
+  // Label for each prayer at the longitudinal centre of its band, at the
+  // subsolar latitude (there the daytime geometry is regular and never polar).
   const BAND_LABELS = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
   function salatBandLabels(sun) {
     const rp = salatRowParams(sun.lat, sun, salatOpts());
@@ -244,10 +244,10 @@
     return cv;
   }
 
-  // Textura equirectangular (océano + contorno de continentes + franjas +
-  // rótulos) para el globo 3D. El contorno va debajo: las franjas son
-  // semitransparentes (componente alpha en BAND_COLORS) y dejan verlo. Al
-  // doble de resolución que el raster para que los rótulos sean legibles.
+  // Equirectangular texture (ocean + continent outlines + bands + labels)
+  // for the 3D globe. The outline goes underneath: the bands are
+  // semi-transparent (alpha component in BAND_COLORS) and let it show. At
+  // twice the raster resolution so the labels stay legible.
   function getSalatTextureUrl(sun) {
     getSalatLayer(sun);
     if (salatCache.texUrl && salatCache.texLand === land.length) return salatCache.texUrl;
@@ -272,29 +272,29 @@
     return salatCache.texUrl;
   }
 
-  // ---------- Menú sencillo / avanzado y capas visibles ----------
+  // ---------- Simple / advanced menu and visible layers ----------
   let uiMode = localStorage.getItem('hilal-menu') === 'adv' ? 'adv' : 'simple';
   const PRAYER_BANDS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
   const ALL_BANDS = [...PRAYER_BANDS, 'night', 'lastthird', 'polar'];
-  // Franjas que se rasterizan: en el menú sencillo, los rezos marcados; en el
-  // avanzado, todas si el checkbox del mapa está activo.
+  // Bands that get rasterised: in the simple menu, the checked prayers; in
+  // the advanced one, all of them if the map checkbox is on.
   function enabledBands() {
     if (uiMode === 'simple') return new Set(PRAYER_BANDS.filter(b => $('chk-' + b).checked));
     return new Set($('salat-map').checked ? ALL_BANDS : []);
   }
-  // Sombreados de noche y zona lunar (en el menú avanzado, siempre activos)
+  // Night and lunar-zone shading (always on in the advanced menu)
   const sunZoneOn = () => uiMode !== 'simple' || $('chk-sun').checked;
   const moonZoneOn = () => uiMode !== 'simple' || $('chk-moon').checked;
   const salatOnMap = () => enabledBands().size > 0;
-  // El relleno de noche sobra cuando el raster ya incluye la franja nocturna
+  // The night fill is redundant when the raster already includes the night band
   const nightShadeOn = () => sunZoneOn() && !enabledBands().has('night');
-  // Para validación: franja vigente en unas coordenadas con el estado actual
+  // For validation: period in force at given coordinates with the current state
   window.__salatBandAt = (lat, lon) => {
     const sun = H.subPoint(A.Body.Sun, A.MakeTime(state.when));
     return salatBandAt(salatRowParams(lat, sun, salatOpts()), lon, sun.lon);
   };
 
-  // ---------- Datos del contorno de continentes (sin fronteras políticas) ----------
+  // ---------- Continent outline data (no political borders) ----------
   const COAST = 'rgba(190,205,225,0.55)';
 
   let land = [];
@@ -303,13 +303,13 @@
     .then(geo => { land = geo.features; base2d = null; renderScene(); })
     .catch(e => console.error('No se pudo cargar el contorno de continentes:', e));
 
-  // ---------- Vista: 2D (canvas, por defecto) / 3D (WebGL, bajo demanda) ----------
+  // ---------- View: 2D (canvas, default) / 3D (WebGL, on demand) ----------
   let view = localStorage.getItem('hilal-view') === '3d' ? '3d' : '2d';
-  let G = null;       // instancia de globe.gl (solo si se usa la vista 3D)
-  let base2d = null;  // canvas offscreen con océano + retícula + contorno de continentes
+  let G = null;       // globe.gl instance (only if the 3D view is used)
+  let base2d = null;  // offscreen canvas with ocean + graticule + continent outlines
   const canvas = $('map2d');
   const ctx2d = canvas.getContext('2d');
-  let mapRect = { x: 0, y: 0, w: 1, h: 1 }; // zona del mapa dentro del canvas
+  let mapRect = { x: 0, y: 0, w: 1, h: 1 }; // map area within the canvas
 
   function ensureGlobe() {
     if (G) return G;
@@ -321,8 +321,8 @@
       .atmosphereAltitude(0.18)
       .polygonsTransitionDuration(0)
       .polygonAltitude(d => d.properties.kind === 'night' ? 0.012 : d.properties.kind === 'moonvis' ? 0.015 : 0.006)
-      // Los continentes se dibujan solo como contorno; el sombreado nocturno
-      // se omite con la capa de salat activa (las franjas ya codifican la noche).
+      // Continents are drawn as outlines only; the night shading is omitted
+      // when the salat layer is active (the bands already encode the night).
       .polygonCapColor(d => d.properties.kind === 'night'
         ? (nightShadeOn() ? 'rgba(4,8,26,0.62)' : 'rgba(0,0,0,0)')
         : d.properties.kind === 'moonvis'
@@ -354,7 +354,7 @@
         return el;
       })
       .onGlobeClick(({ lat, lng }) => setLocation(lat, lng, null, true));
-    G.renderer().setPixelRatio(1); // menos carga de GPU
+    G.renderer().setPixelRatio(1); // less GPU load
     G.globeMaterial().color.set('#10395c');
     G.globeMaterial().shininess = 4;
     G.pointOfView({ lat: state.loc.lat, lng: state.loc.lon, altitude: 1.8 }, 0);
@@ -372,7 +372,7 @@
       ensureGlobe().resumeAnimation();
       G.width(innerWidth).height(innerHeight);
     } else if (G) {
-      G.pauseAnimation(); // sin bucle de render WebGL en la vista 2D
+      G.pauseAnimation(); // no WebGL render loop in the 2D view
     }
     renderScene();
   }
@@ -387,7 +387,7 @@
     renderScene();
   });
 
-  // ---------- Render 2D (equirectangular) ----------
+  // ---------- 2D render (equirectangular) ----------
   function layout2d() {
     const sbw = innerWidth > 720 ? 420 : 0;
     const availW = innerWidth - sbw, availH = innerHeight;
@@ -421,19 +421,19 @@
     const c = base2d.getContext('2d');
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const w = mapRect.w, h = mapRect.h;
-    // Océano
+    // Ocean
     c.fillStyle = '#10395c';
     c.fillRect(0, 0, w, h);
-    // Retícula
+    // Graticule
     c.strokeStyle = 'rgba(255,255,255,0.08)';
     c.lineWidth = 1;
     c.beginPath();
     for (let lon = -150; lon <= 150; lon += 30) { c.moveTo((lon + 180) / 360 * w, 0); c.lineTo((lon + 180) / 360 * w, h); }
     for (let lat = -60; lat <= 60; lat += 30) { c.moveTo(0, (90 - lat) / 180 * h); c.lineTo(w, (90 - lat) / 180 * h); }
     c.stroke();
-    c.strokeStyle = 'rgba(255,255,255,0.16)'; // ecuador
+    c.strokeStyle = 'rgba(255,255,255,0.16)'; // equator
     c.beginPath(); c.moveTo(0, h / 2); c.lineTo(w, h / 2); c.stroke();
-    // Contorno de continentes (sin fronteras políticas ni relleno)
+    // Continent outlines (no political borders, no fill)
     c.lineWidth = 1;
     c.strokeStyle = COAST;
     c.beginPath();
@@ -451,13 +451,13 @@
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.drawImage(base2d, mapRect.x, mapRect.y, mapRect.w, mapRect.h);
 
-    // Franjas de salat (capa raster analítica)
+    // Salat bands (analytic raster layer)
     const bandsOn = salatOnMap();
     if (bandsOn) {
       c.drawImage(getSalatLayer(geo.sun), mapRect.x, mapRect.y, mapRect.w, mapRect.h);
     }
 
-    // Zona de noche (el relleno se omite si las franjas ya la codifican)
+    // Night zone (the fill is omitted if the bands already encode it)
     if (nightShadeOn()) {
       c.beginPath(); pathRing(c, geo.night.ring, mapRect.x, mapRect.y, mapRect.w, mapRect.h);
       c.fillStyle = 'rgba(4,8,26,0.55)';
@@ -470,7 +470,7 @@
       c.stroke();
     }
 
-    // Zona con la Luna sobre el horizonte
+    // Area with the Moon above the horizon
     if (moonZoneOn()) {
       c.beginPath(); pathRing(c, geo.moonVis.ring, mapRect.x, mapRect.y, mapRect.w, mapRect.h);
       c.fillStyle = 'rgba(255,216,102,0.10)';
@@ -483,10 +483,10 @@
       c.setLineDash([]);
     }
 
-    // Rótulos de los rezos, por encima de los sombreados
+    // Prayer labels, above the shading
     if (bandsOn) drawSalatLabels(c, geo.sun, lon2x, lat2y, 12);
 
-    // Puntos del mapa de visibilidad (por encima de los sombreados)
+    // Visibility-map points (above the shading)
     if (state.mapPoints.length) {
       const cw = state.mapRes / 360 * mapRect.w;
       c.globalAlpha = 0.8;
@@ -497,7 +497,7 @@
       c.globalAlpha = 1;
     }
 
-    // Marcadores: Sol, Luna y ubicación
+    // Markers: Sun, Moon and location
     drawMarker(c, geo.sun.lon, geo.sun.lat, '#ffd866', '☀️');
     drawMarker(c, geo.moon.lon, geo.moon.lat, '#e8edf5', '🌙');
     const px = lon2x(((state.loc.lon + 180) % 360 + 360) % 360 - 180), py = lat2y(state.loc.lat);
@@ -535,7 +535,7 @@
     setLocation(lat, lon, null, true);
   });
 
-  // ---------- Render común ----------
+  // ---------- Common render ----------
   let lastOverlay3d = null;
   function renderScene() {
     const geo = sceneGeometry();
@@ -545,7 +545,7 @@
       const styleKey = [on, nightShadeOn(), sunZoneOn(), moonZoneOn()].join('|');
       if (styleKey !== lastOverlay3d) {
         lastOverlay3d = styleKey;
-        // Reaplica los accesores para que países/noche/luna cambien de estilo
+        // Re-apply the accessors so land/night/moon change style
         G.polygonCapColor(G.polygonCapColor());
         G.polygonStrokeColor(G.polygonStrokeColor());
       }
@@ -563,8 +563,8 @@
     }
   }
 
-  // ---------- Ubicación ----------
-  let locIsDefault = true; // aún no se ha fijado ninguna ubicación (ni usuario ni IP)
+  // ---------- Location ----------
+  let locIsDefault = true; // no location has been set yet (neither user nor IP)
   function setLocation(lat, lon, name, reverseLookup) {
     locIsDefault = false;
     state.loc.lat = +lat; state.loc.lon = +lon;
@@ -592,8 +592,8 @@
     $('elev').value = state.loc.elev;
   }
 
-  // Ubicación por defecto a partir de la IP del visitante (silencioso: si el
-  // servicio falla o el usuario ya eligió algo, se queda la que haya).
+  // Default location from the visitor's IP (silent: if the service fails or
+  // the user already chose something, whatever is set stays).
   function geolocateByIp() {
     const apply = (lat, lon, name) => {
       if (!locIsDefault) return;
@@ -617,7 +617,7 @@
     if (Number.isFinite(lat) && Number.isFinite(lon)) setLocation(lat, lon, null, true);
   }));
 
-  // ---------- Búsqueda (Nominatim/OSM), cableada en ambos menús ----------
+  // ---------- Search (Nominatim/OSM), wired in both menus ----------
   let searchTimer = null;
   function wireSearch(input, box) {
     input.addEventListener('input', () => {
@@ -658,7 +658,7 @@
   wireSearch($('search'), $('search-results'));
   wireSearch($('search-s'), $('search-results-s'));
 
-  // ---------- Fecha y hora ----------
+  // ---------- Date and time ----------
   function syncInputsFromWhen() {
     const p = partsInZone(state.when, state.loc.tz);
     $('gdate').value = `${p.y}-${String(p.m).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
@@ -714,8 +714,8 @@
   $('next-day').addEventListener('click', () => { state.when = new Date(state.when.getTime() + 86400000); updateAll(); });
   $('now-btn').addEventListener('click', () => { state.when = new Date(); updateAll(); });
 
-  // Rueda del ratón sobre los campos de fecha/hora: desplaza el tiempo y
-  // anima Sol y Luna. Los recálculos se coalescen por frame (rAF).
+  // Mouse wheel over the date/time fields: shifts the time and animates the
+  // Sun and the Moon. Recomputations are coalesced per frame (rAF).
   let updPending = false;
   function scheduleUpdate() {
     if (updPending) return;
@@ -726,7 +726,7 @@
   function attachWheel(el, fn) {
     el.addEventListener('wheel', (e) => {
       e.preventDefault();
-      fn(e.deltaY < 0 ? 1 : -1, e); // rueda arriba = avanzar
+      fn(e.deltaY < 0 ? 1 : -1, e); // wheel up = forward
     }, { passive: false });
   }
   const timeStepMin = (e) => e.shiftKey ? 1 : e.ctrlKey ? 60 : 10;
@@ -735,9 +735,9 @@
   attachWheel($('gtime'), (d, e) => nudgeWhen(d * timeStepMin(e) * 60000));
   attachWheel($('htime'), (d, e) => nudgeWhen(d * timeStepMin(e) * 60000));
 
-  // Rueda sobre el mapa 2D o el globo 3D: desplaza el tiempo ±10 min.
-  // En captura y con stopPropagation para adelantarse a los OrbitControls del
-  // globo; alt+rueda deja pasar el evento y conserva el zoom de la cámara.
+  // Wheel over the 2D map or the 3D globe: shifts the time ±10 min.
+  // Capturing and with stopPropagation to get ahead of the globe's
+  // OrbitControls; alt+wheel lets the event through and keeps the camera zoom.
   function attachMapWheel(el) {
     el.addEventListener('wheel', (e) => {
       if (e.altKey) return;
@@ -749,7 +749,7 @@
   attachMapWheel(canvas);
   attachMapWheel($('globe'));
 
-  // ---------- Render de tablas ----------
+  // ---------- Table rendering ----------
   function renderTable(el, rows) {
     el.innerHTML = '';
     for (const r of rows) {
@@ -767,7 +767,7 @@
   const pill = (code, label) =>
     `<span class="pill" style="background:${CAT_COLORS[code] || '#888'};color:#06121f">${code}</span> ${label}`;
 
-  // ---------- Franjas de salat ----------
+  // ---------- Salat periods ----------
   const SALAT_METHODS = {
     mwl: { fajrAngle: 18, ishaAngle: 17 },
     uaq: { fajrAngle: 18.5, ishaInterval: 90 },
@@ -788,7 +788,7 @@
     let pt = null, ptPrev = null;
     try {
       pt = H.prayerTimes(obs, wallNoonUtcMs, opts);
-      // Noche de la víspera: entre las 00:00 y el fajr rigen sus franjas nocturnas
+      // Previous evening's night: between 00:00 and fajr its night bands apply
       ptPrev = H.prayerTimes(obs, wallNoonUtcMs - 86400000, opts);
     } catch (e) { console.error(e); }
     const el = $('salat-table');
@@ -834,7 +834,7 @@
     }
   }
 
-  // ---------- Menú sencillo: estado del instante ----------
+  // ---------- Simple menu: state at the instant ----------
   const compass = (az) => tt('dirs')[Math.round(az / 45) % 8];
   function renderSimpleStatus() {
     const t = A.MakeTime(state.when);
@@ -865,7 +865,7 @@
       `🕌 ${tt('st_band')}: <b>${bandTxt}</b><br>${moonHtml}`;
   }
 
-  // Conmutación sencillo/avanzado
+  // Simple/advanced switching
   function setMode(m) {
     uiMode = m;
     localStorage.setItem('hilal-menu', m);
@@ -873,20 +873,20 @@
     $('mode-adv').classList.toggle('active', m === 'adv');
     $('simple-panel').classList.toggle('hidden', m !== 'simple');
     $('adv-panel').classList.toggle('hidden', m === 'simple');
-    renderScene(); // el juego de franjas visibles depende del menú
+    renderScene(); // the set of visible bands depends on the menu
   }
   $('mode-simple').addEventListener('click', () => setMode('simple'));
   $('mode-adv').addEventListener('click', () => setMode('adv'));
   ['chk-sun', 'chk-moon', ...PRAYER_BANDS.map(b => 'chk-' + b)]
     .forEach(id => $(id).addEventListener('change', renderScene));
 
-  // ---------- Idioma ----------
+  // ---------- Language ----------
   $('lang-sel').addEventListener('change', () => {
     I18N.set($('lang-sel').value);
-    updateAll();    // regenera todos los textos dinámicos
+    updateAll();    // regenerates all dynamic texts
   });
 
-  // ---------- Cálculo principal ----------
+  // ---------- Main computation ----------
   function updateAll() {
     syncInputsFromWhen();
     renderLocation();
@@ -896,13 +896,13 @@
     const p = partsInZone(state.when, state.loc.tz);
     const wallNoonUtcMs = zonedTimeToUtc(p.y, p.m, p.d, 12, 0, state.loc.tz).getTime();
 
-    // --- Equivalencias de calendario ---
+    // --- Calendar equivalences ---
     const wallNoon = new Date(Date.UTC(p.y, p.m - 1, p.d, 12));
     const umq = HJ.fromGregorian(wallNoon, 'islamic-umalqura');
     const tab = HJ.fromGregorian(wallNoon, 'islamic-civil');
     const weekday = new Intl.DateTimeFormat(I18N.locale(), { timeZone: state.loc.tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(state.when);
 
-    // --- Análisis de la tarde ---
+    // --- Evening analysis ---
     let ev = null;
     try { ev = H.evening(obs, wallNoonUtcMs); } catch (e) { console.error(e); }
 
@@ -915,7 +915,7 @@
     }
     $('date-equiv').innerHTML = equivHtml;
 
-    // --- Veredicto y tabla de la tarde ---
+    // --- Verdict and evening table ---
     const vEl = $('verdict');
     if (!ev || ev.polar) {
       vEl.className = 'verdict cat-P';
@@ -966,7 +966,7 @@
       ]);
     }
 
-    // --- Instante seleccionado ---
+    // --- Selected instant ---
     try {
       const t = A.MakeTime(state.when);
       const inst = H.instantData(obs, t);
@@ -999,7 +999,7 @@
     renderSimpleStatus();
   }
 
-  // ---------- Próximas lunaciones ----------
+  // ---------- Upcoming lunations ----------
   let lunationsCache = null;
   function renderLunations() {
     if (!lunationsCache) lunationsCache = H.nextNewMoons(new Date(Date.now() - 40 * 86400000), 14);
@@ -1030,7 +1030,7 @@
     }
   }
 
-  // ---------- Mapa global de visibilidad ----------
+  // ---------- Global visibility map ----------
   let worker = null;
   $('map-btn').addEventListener('click', () => {
     if (worker) { worker.terminate(); worker = null; }
@@ -1067,7 +1067,7 @@
   });
   $('map-clear').addEventListener('click', () => { state.mapPoints = []; renderScene(); });
 
-  // ---------- Arranque ----------
+  // ---------- Startup ----------
   I18N.apply();
   $('lang-sel').value = I18N.lang;
   renderLocation();

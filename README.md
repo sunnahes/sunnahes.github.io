@@ -1,19 +1,19 @@
-# HilalScope — Visibilidad del creciente lunar
+# HilalScope — Crescent moon visibility
 
-Web de referencia para calcular la visibilidad del hilal (primer creciente lunar)
-y el comienzo de los meses islámicos, con base científica.
+Reference site for computing the visibility of the hilal (the first crescent
+moon) and the start of the Islamic months, on a scientific basis.
 
-## Ejecutar
+## Running
 
-Es un sitio estático; basta cualquier servidor de ficheros:
+It is a static site; any file server will do:
 
 ```bash
 python3 -m http.server 8788
 # → http://localhost:8788
 ```
 
-(Necesita conexión a internet solo para la búsqueda de lugares — Nominatim/OSM —
-y la ubicación inicial estimada por IP — GeoJS, con ipwho.is de respaldo.)
+(An internet connection is only needed for place search — Nominatim/OSM —
+and the initial IP-based location estimate — GeoJS, with ipwho.is as fallback.)
 
 ## Tests
 
@@ -21,57 +21,58 @@ y la ubicación inicial estimada por IP — GeoJS, con ipwho.is de respaldo.)
 node test/sanity.cjs
 ```
 
-Valida las efemérides contra eclipses solares publicados por la NASA (las
-conjunciones coinciden con los eclipses), el inicio real de Ramadán 1444 y la
-conversión Umm al-Qura.
+Validates the ephemerides against solar eclipses published by NASA (the
+conjunctions coincide with the eclipses), the actual start of Ramadan 1444 and
+the Umm al-Qura conversion.
 
-## Funcionalidad
+## Features
 
-- Dos vistas conmutables: **mapa 2D en canvas** (equirectangular, sin WebGL,
-  por defecto: muy ligero) y **globo 3D** (globe.gl, inicializado solo bajo
-  demanda, con antialiasing desactivado, pixel ratio 1 y pausa de animación
-  cuando no se usa). Ambas con contorno de continentes (Natural Earth 110m,
-  sin fronteras políticas) y retícula; clic o búsqueda para fijar ubicación
-  (la inicial se estima por IP), con zona horaria automática (tz-lookup) y
-  altitud configurable.
-- Proyección de la zona de noche (terminador solar geométrico) y de la zona
-  desde la que la Luna está sobre el horizonte (casquete de 90° centrado en el
-  punto sublunar, borde amarillo discontinuo), recalculadas para el instante
-  seleccionado, con puntos subsolar y sublunar. La intersección noche ∩ zona
-  lunar es donde la Luna puede verse en cielo oscuro.
-- Fecha/hora en calendario gregoriano o hijri (Umm al-Qura), con equivalencias
-  (incluido el tabular/islámico civil) y aviso de cambio de día tras el maghrib.
-- Análisis del hilal de la tarde: conjunción, edad de la Luna, puestas de sol y
-  luna, LAG, mejor momento Tb = Ts + 4/9·LAG.
-- Criterios de visibilidad: **Yallop (1997, NAO TN 69)** (valor q, categorías A–F)
-  y **Odeh (2006, ICOP)** (valor V, zonas A–D), más el límite de Danjon (~7°).
-- Estado completo de la Luna en cualquier instante: altitud/acimut, fase,
-  iluminación, elongación, distancia, paralaje, diámetro, magnitud, AR/Dec…
-- Mapa global de visibilidad (categorías de Yallop) calculado en un Web Worker.
-- Tabla de próximas lunaciones con el mes islámico que inaugura cada una.
-- Franjas de salat con definición astronómica (ángulo solar del alba/crepúsculo,
-  paso meridiano, condición de sombra del asr, medianoche islámica y último
-  tercio), con métodos MWL / Umm al-Qura / Egipto / ISNA / Karachi y asr
-  estándar o hanafí; se resalta la franja vigente y se indica si la Luna está
-  sobre el horizonte en cada una.
-- Franjas de salat proyectadas sobre el mapa (2D y 3D): capa raster analítica
-  que colorea cada punto del planeta según la franja vigente en el instante
-  seleccionado (calculada del ángulo horario y la altitud solar locales, sin
-  búsquedas: se anima en tiempo real con la rueda del ratón). En 3D se aplica
-  como textura del globo sobre el contorno de continentes.
-- Rueda del ratón sobre los campos de fecha (±1 día) y hora (±10 min; Mayús
-  ±1 min, Ctrl ±1 h) para animar el movimiento del Sol y la Luna en el mapa.
+- Two switchable views: **2D canvas map** (equirectangular, no WebGL, the
+  default: very lightweight) and **3D globe** (globe.gl, initialised only on
+  demand, with antialiasing disabled, pixel ratio 1 and animation paused when
+  not in use). Both with continent outlines (Natural Earth 110m, no political
+  borders) and a graticule; click or search to set the location (the initial
+  one is estimated from the IP), with automatic time zone (tz-lookup) and
+  configurable altitude.
+- Projection of the night zone (geometric solar terminator) and of the area
+  from which the Moon is above the horizon (90° cap centred on the sublunar
+  point, dashed yellow edge), recomputed for the selected instant, with the
+  subsolar and sublunar points. The intersection night ∩ lunar zone is where
+  the Moon can be seen in a dark sky.
+- Date/time in the Gregorian or Hijri (Umm al-Qura) calendar, with
+  equivalences (including the tabular/civil Islamic one) and a notice of the
+  day change after maghrib.
+- Analysis of the evening hilal: conjunction, Moon age, sunset and moonset,
+  LAG, best time Tb = Ts + 4/9·LAG.
+- Visibility criteria: **Yallop (1997, NAO TN 69)** (q value, categories A–F)
+  and **Odeh (2006, ICOP)** (V value, zones A–D), plus the Danjon limit (~7°).
+- Full state of the Moon at any instant: altitude/azimuth, phase,
+  illumination, elongation, distance, parallax, diameter, magnitude, RA/Dec…
+- Global visibility map (Yallop categories) computed in a Web Worker.
+- Table of upcoming lunations with the Islamic month each one opens.
+- Salat periods with astronomical definition (solar angle of dawn/twilight,
+  meridian transit, asr shadow condition, Islamic midnight and last third),
+  with the MWL / Umm al-Qura / Egypt / ISNA / Karachi methods and standard or
+  Hanafi asr; the current period is highlighted and each one indicates whether
+  the Moon is above the horizon.
+- Salat periods projected on the map (2D and 3D): an analytic raster layer
+  that colours every point on the planet according to the period in force at
+  the selected instant (computed from the local hour angle and solar altitude,
+  no searches: it animates in real time with the mouse wheel). In 3D it is
+  applied as a globe texture over the continent outlines.
+- Mouse wheel over the date (±1 day) and time (±10 min; Shift ±1 min,
+  Ctrl ±1 h) fields to animate the motion of the Sun and the Moon on the map.
 
-## Ciencia
+## Science
 
-- Efemérides: [Astronomy Engine](https://github.com/cosinekitty/astronomy)
-  (VSOP87 + ELP2000-82 truncada, precisión ~1′).
+- Ephemerides: [Astronomy Engine](https://github.com/cosinekitty/astronomy)
+  (VSOP87 + truncated ELP2000-82, ~1′ accuracy).
 - Yallop, B.D. (1997). *A Method for Predicting the First Sighting of the New
   Crescent Moon*. NAO Technical Note No. 69, HM Nautical Almanac Office.
-- Odeh, M.Sh. (2006). «New Criterion for Lunar Crescent Visibility».
+- Odeh, M.Sh. (2006). "New Criterion for Lunar Crescent Visibility".
   *Experimental Astronomy* 18, 39–64. doi:10.1007/s10686-005-9002-5.
-- Danjon, A. (1936). «Le croissant lunaire». *L'Astronomie* 50, 57–65.
-- Calendario Umm al-Qura vía ICU/`Intl` (véase R.H. van Gent, Univ. de Utrecht).
+- Danjon, A. (1936). "Le croissant lunaire". *L'Astronomie* 50, 57–65.
+- Umm al-Qura calendar via ICU/`Intl` (see R.H. van Gent, Utrecht University).
 
-Las convenciones exactas (geocéntrico vs. topocéntrico, refracción, etc.) están
-documentadas en la sección «Metodología» de la propia web.
+The exact conventions (geocentric vs. topocentric, refraction, etc.) are
+documented in the "Methodology" section of the site itself.

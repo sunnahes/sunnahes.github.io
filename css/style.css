@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
 
-/* Tema oscuro (por defecto) */
+/* Dark theme (default) */
 body {
   --bg: #05070d; --fg: #dde3ec;
   --sb1: rgba(8,12,22,.92); --sb2: rgba(8,12,22,.86); --sb-border: #1c2738;
@@ -17,7 +17,7 @@ body {
   --vt-bg: rgba(13,20,34,.9);
 }
 
-/* Tema claro */
+/* Light theme */
 body.light {
   --bg: #dfe5ee; --fg: #1d2533;
   --sb1: rgba(245,247,251,.95); --sb2: rgba(238,242,248,.92); --sb-border: #c3cedd;
@@ -113,7 +113,7 @@ button.ghost { background: transparent; }
 .verdict.cat-F { border-left-color: #7f0000; color: #ff9c9c; }
 .verdict.cat-S { border-left-color: #546e7a; color: #b0bec5; }
 .verdict.cat-P { border-left-color: #546e7a; color: #b0bec5; }
-/* En claro, el texto coloreado pastel no contrasta: se usa el color base */
+/* In light mode the pastel coloured text lacks contrast: use the base colour */
 body.light .verdict { color: var(--fg); }
 
 table.data { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
