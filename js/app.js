@@ -539,6 +539,7 @@
   }
 
   canvas.addEventListener('click', (ev) => {
+    if (suppressMapClick) { suppressMapClick = false; return; }
     const r = canvas.getBoundingClientRect();
     const x = ev.clientX - r.left, y = ev.clientY - r.top;
     if (x < mapRect.x || x > mapRect.x + mapRect.w || y < mapRect.y || y > mapRect.y + mapRect.h) return;
@@ -760,6 +761,34 @@
   }
   attachMapWheel(canvas);
   attachMapWheel($('globe'));
+
+  // Touch drag on the 2D map: shifts the time so the bands/Sun/Moon track
+  // the finger (1° of longitude = 4 min; westward drag = time forward).
+  // A real drag must not fire the tap-to-set-location handler afterwards.
+  let touchDrag = null;       // { x, y, moved } while a finger is on the map
+  let suppressMapClick = false;
+  canvas.addEventListener('touchstart', (e) => {
+    touchDrag = e.touches.length === 1
+      ? { x: e.touches[0].clientX, y: e.touches[0].clientY, moved: false }
+      : null;
+  }, { passive: true });
+  canvas.addEventListener('touchmove', (e) => {
+    if (!touchDrag || e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    if (Math.hypot(t.clientX - touchDrag.x, t.clientY - touchDrag.y) > 8) touchDrag.moved = true;
+    const dx = t.clientX - touchDrag.x;
+    touchDrag.x = t.clientX;
+    if (dx) nudgeWhen(-dx / mapRect.w * 1440 * 60000); // px → ° → min → ms
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => {
+    if (touchDrag && touchDrag.moved) {
+      suppressMapClick = true;
+      state.when = new Date(Math.round(state.when.getTime() / 60000) * 60000); // snap to whole minute
+      updateAll();
+    }
+    touchDrag = null;
+  });
 
   // ---------- Table rendering ----------
   function renderTable(el, rows) {
