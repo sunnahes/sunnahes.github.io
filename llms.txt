@@ -1,0 +1,43 @@
+# HilalScope — Crescent moon visibility and Islamic months
+
+> Free, scientific web calculator of hilal visibility (the first crescent moon
+> after the new moon), which marks the beginning of the Islamic months.
+> Available in English and Spanish. No sign-up required: all astronomical
+> calculations run in the browser. External services are used only for
+> geocoding (OpenStreetMap Nominatim) and for the initial IP-based location
+> estimate (GeoJS).
+
+## What it computes
+
+- **Hilal visibility verdict** for any date and location on the planet,
+  according to two published statistical criteria:
+  - Yallop criterion (1997, NAO Technical Note 69): q value and categories A–F.
+  - Odeh criterion (2006, ICOP): V value and zones A–D.
+- **Astronomical parameters**: Moon age, LAG (moonset − sunset), best
+  observation time (Tb), ARCV, ARCL/elongation, DAZ, crescent width (W),
+  disc illumination, Danjon limit (~7°).
+- **Calendars**: Gregorian ↔ Hijri conversion (Umm al-Qura and tabular
+  variants); the Islamic day begins at maghrib.
+- **Salat times** with astronomical definition (fajr, dhuhr, asr, maghrib,
+  isha, Islamic midnight, last third) and the MWL, Umm al-Qura, Egypt GAS,
+  ISNA and Univ. of Karachi methods; standard or Hanafi asr.
+- **2D map and 3D globe** with the night zone, the area where the Moon is
+  above the horizon, and the subsolar/sublunar points.
+- **Global visibility map** by Yallop category for the local evening of any
+  date.
+- **Table of upcoming new moons** (geocentric conjunction).
+
+## Scientific basis
+
+- Ephemerides: Astronomy Engine (VSOP87 + truncated ELP2000-82, ~1′ accuracy).
+- Yallop, B.D. (1997). *A Method for Predicting the First Sighting of the New
+  Crescent Moon*. NAO TN 69, HM Nautical Almanac Office.
+- Odeh, M.Sh. (2006). "New Criterion for Lunar Crescent Visibility".
+  *Experimental Astronomy* 18, 39–64.
+- Danjon, A. (1936). "Le croissant lunaire". *L'Astronomie* 50, 57–65.
+- Umm al-Qura calendar via ICU (Intl).
+
+## Note
+
+This site performs astronomical calculations; the official declaration of the
+Islamic months rests with each country's authority (sighting or calculation).

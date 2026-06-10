@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="title">HilalScope — Crescent moon visibility and Islamic months</title>
+<meta name="description" content="Scientific hilal (crescent moon) visibility calculator: Yallop and Odeh criteria, precision ephemerides, Gregorian and Hijri calendars, salat times and a global visibility map.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#05070d">
+<meta name="author" content="HilalScope">
+
+<link rel="canonical" href="https://hilalscope.pages.dev/">
+<link rel="alternate" hreflang="en" href="https://hilalscope.pages.dev/?lang=en">
+<link rel="alternate" hreflang="es" href="https://hilalscope.pages.dev/?lang=es">
+<link rel="alternate" hreflang="x-default" href="https://hilalscope.pages.dev/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HilalScope">
+<meta property="og:title" content="HilalScope — Crescent moon visibility and Islamic months">
+<meta property="og:description" content="Scientific hilal visibility calculator: Yallop and Odeh criteria, Hijri calendar, salat times and a global visibility map.">
+<meta property="og:url" content="https://hilalscope.pages.dev/">
+<meta property="og:image" content="https://hilalscope.pages.dev/img/earth-night.jpg">
+<meta property="og:locale" content="en_GB">
+<meta property="og:locale:alternate" content="es_ES">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HilalScope — Crescent moon visibility and Islamic months">
+<meta name="twitter:description" content="Scientific hilal visibility calculator: Yallop and Odeh criteria, Hijri calendar, salat times and a global visibility map.">
+<meta name="twitter:image" content="https://hilalscope.pages.dev/img/earth-night.jpg">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☾</text></svg>">
+<link rel="stylesheet" href="css/style.css?v=3">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://hilalscope.pages.dev/#app",
+      "name": "HilalScope",
+      "alternateName": "HilalScope — Crescent moon visibility and Islamic months",
+      "url": "https://hilalscope.pages.dev/",
+      "description": "Scientific hilal (crescent moon) visibility calculator: Yallop (NAO TN 69) and Odeh (ICOP) criteria, precision ephemerides with Astronomy Engine, Gregorian and Hijri (Umm al-Qura) calendars, astronomically defined salat times and a global visibility map by category.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "browserRequirements": "Requires JavaScript",
+      "inLanguage": ["en", "es"],
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "featureList": [
+        "Hilal visibility verdict according to the Yallop and Odeh criteria",
+        "Conversion between the Gregorian and Hijri (Umm al-Qura) calendars",
+        "2D map and 3D globe with night zone and lunar visibility",
+        "Astronomically defined salat times (MWL, Umm al-Qura, Egypt, ISNA, Karachi)",
+        "Table of upcoming new moons (geocentric conjunction)",
+        "Global visibility map by Yallop category"
+      ],
+      "about": [
+        { "@type": "Thing", "name": "hilal", "description": "First crescent moon visible after the new moon, which marks the start of the Islamic month" },
+        { "@type": "Thing", "name": "Hijri calendar", "description": "Islamic lunar calendar" },
+        { "@type": "Thing", "name": "Yallop criterion", "description": "Statistical method for predicting the first sighting of the new crescent moon (NAO Technical Note 69, 1997)" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://hilalscope.pages.dev/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the hilal?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The hilal is the first crescent moon visible after the conjunction (geocentric new moon). Its sighting on the evening after the conjunction traditionally marks (ruʾyah) the beginning of the Islamic month." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the Yallop criterion?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The Yallop criterion (1997, NAO Technical Note 69) computes a q value from the arc of vision (ARCV) and the crescent width (W′) at the best observation time (Tb = sunset + 4/9 of the LAG). It classifies visibility into categories from A (visible to the naked eye) to F (below the Danjon limit, physically unobservable)." }
+        },
+        {
+          "@type": "Question",
+          "name": "When does the Islamic month begin?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Traditionally, with the first sighting of the hilal on the evening after the conjunction (ruʾyah), although some countries determine it by astronomical calculation (for example, the Umm al-Qura calendar of Saudi Arabia). The official declaration rests with each country's authority." }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the LAG and the Danjon limit?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The LAG is the number of minutes between sunset and moonset; if it is ≤ 0, the hilal is impossible. The Danjon limit (~7° of elongation) is the minimum Sun–Moon angle below which the crescent never forms and is physically unobservable." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div id="globe" class="hidden"></div>
+<canvas id="map2d"></canvas>
+<div id="view-toggle">
+  <button id="view-2d" class="active" data-i18n="view_2d">2D map</button>
+  <button id="view-3d" data-i18n="view_3d">3D globe</button>
+  <select id="lang-sel" title="Language / Idioma">
+    <option value="en">English</option>
+    <option value="es">Castellano</option>
+  </select>
+</div>
+
+<aside id="sidebar">
+  <header>
+    <h1>☾ HilalScope</h1>
+    <p class="subtitle" data-i18n="subtitle">Crescent moon visibility and the start of the Islamic months, from astronomy.</p>
+    <div class="tabs">
+      <button id="mode-simple" class="tab active" data-i18n="tab_simple">Simple</button>
+      <button id="mode-adv" class="tab" data-i18n="tab_adv">Advanced</button>
+    </div>
+  </header>
+
+  <!-- Menú sencillo (por defecto) -->
+  <div id="simple-panel">
+    <section class="card">
+      <h2 data-i18n="s_loc">Location</h2>
+      <div class="searchbox">
+        <input id="search-s" type="text" data-i18n-ph="search_ph" placeholder="Search for a city or place… (e.g. Mecca, Rabat, Córdoba)" autocomplete="off">
+        <div id="search-results-s" class="results hidden"></div>
+      </div>
+      <div class="locked"><div id="loc-name-s">—</div></div>
+      <p class="hint" data-i18n="s_click_hint">You can also click directly on the map.</p>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="s_layers">Map layers</h2>
+      <div class="checklist">
+        <label><input type="checkbox" id="chk-sun" checked> <span data-i18n="chk_sun">☀️ Sun band (night zone)</span></label>
+        <label><input type="checkbox" id="chk-moon" checked> <span data-i18n="chk_moon">🌙 Area with the Moon above the horizon</span></label>
+        <label><input type="checkbox" id="chk-fajr" checked> <i class="sw" style="background:rgba(38,198,218,.85)"></i> Fajr</label>
+        <label><input type="checkbox" id="chk-dhuhr" checked> <i class="sw" style="background:rgba(255,213,79,.85)"></i> Dhuhr</label>
+        <label><input type="checkbox" id="chk-asr" checked> <i class="sw" style="background:rgba(255,152,0,.85)"></i> Asr</label>
+        <label><input type="checkbox" id="chk-maghrib" checked> <i class="sw" style="background:rgba(239,83,80,.85)"></i> Maghrib</label>
+        <label><input type="checkbox" id="chk-isha" checked> <i class="sw" style="background:rgba(126,87,194,.9)"></i> Isha</label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="s_now">At this moment</h2>
+      <div id="simple-status" class="equiv">—</div>
+      <p class="hint" data-i18n="s_wheel_hint">🖱️ Move the mouse wheel over the map to shift time in 10-minute steps and watch the prayer period and the Moon change.</p>
+    </section>
+  </div>
+
+  <!-- Menú avanzado -->
+  <div id="adv-panel" class="hidden">
+
+  <!-- Búsqueda de ubicación -->
+  <section class="card">
+    <h2 data-i18n="a_loc">1 · Location</h2>
+    <div class="searchbox">
+      <input id="search" type="text" data-i18n-ph="search_ph" placeholder="Search for a city or place… (e.g. Mecca, Rabat, Córdoba)" autocomplete="off">
+      <div id="search-results" class="results hidden"></div>
+    </div>
+    <div id="locked" class="locked">
+      <div id="loc-name">—</div>
+      <div class="row small">
+        <span id="loc-coords"></span>
+        <span id="loc-tz"></span>
+      </div>
+      <div class="row">
+        <label>Lat <input id="lat" type="number" step="0.0001" min="-90" max="90"></label>
+        <label>Lon <input id="lon" type="number" step="0.0001" min="-180" max="180"></label>
+        <label><span data-i18n="lbl_alt">Alt (m)</span> <input id="elev" type="number" step="1" value="0"></label>
+      </div>
+      <p class="hint" data-i18n="a_click_hint">You can also click directly on the globe to lock a location.</p>
+    </div>
+  </section>
+
+  <!-- Fecha y hora -->
+  <section class="card">
+    <h2 data-i18n="a_dt">2 · Date and time <span class="small">(local time at the location)</span></h2>
+    <div class="tabs">
+      <button id="tab-greg" class="tab active" data-i18n="tab_greg">Gregorian</button>
+      <button id="tab-hijri" class="tab">Hijri</button>
+    </div>
+    <div id="panel-greg" class="panel">
+      <div class="row">
+        <input id="gdate" type="date">
+        <input id="gtime" type="time" step="60">
+      </div>
+    </div>
+    <div id="panel-hijri" class="panel hidden">
+      <div class="row">
+        <label><span data-i18n="lbl_day">Day</span> <input id="hday" type="number" min="1" max="30" value="1"></label>
+        <label><span data-i18n="lbl_month">Month</span> <select id="hmonth"></select></label>
+        <label><span data-i18n="lbl_year">Year AH</span> <input id="hyear" type="number" min="1318" max="1599" value="1447"></label>
+      </div>
+      <div class="row">
+        <input id="htime" type="time" step="60">
+        <span class="small" data-i18n="hijri_var">Variant: Umm al-Qura</span>
+      </div>
+      <div id="hijri-warn" class="warn hidden"></div>
+    </div>
+    <div class="row nav-day">
+      <button id="prev-day" data-i18n="btn_prev">◀ −1 day</button>
+      <button id="now-btn" data-i18n="btn_now">Now</button>
+      <button id="next-day" data-i18n="btn_next">+1 day ▶</button>
+    </div>
+    <div id="date-equiv" class="equiv"></div>
+    <p class="hint" data-i18n="dt_wheel_hint">🖱️ Roll the mouse wheel over the <b>date</b> field (±1 day), the <b>time</b> field (±10 min; Shift ±1 min, Ctrl ±1 h) or directly over the <b>map</b> (±10 min) to animate the Sun and the Moon.</p>
+    <p class="hint" data-i18n="dt_map_hint">The map shades the night zone (Sun below the horizon) and outlines, in dashed yellow, the area from which the Moon is above the horizon at the selected instant (geometric projection of the lunar visibility “cone”). Where both overlap, the Moon can be seen in a dark sky. ☀️ and 🌙 mark the subsolar and sublunar points.</p>
+  </section>
+
+  <!-- Veredicto -->
+  <section class="card" id="verdict-card">
+    <h2 data-i18n="verdict_title">The hilal that evening</h2>
+    <div id="verdict" class="verdict">—</div>
+    <table class="data" id="evening-table"></table>
+  </section>
+
+  <!-- Criterios -->
+  <section class="card">
+    <h2 data-i18n="criteria_title">Visibility criteria <span class="small">(at best time)</span></h2>
+    <table class="data" id="criteria-table"></table>
+  </section>
+
+  <!-- Estado de la luna en el instante -->
+  <section class="card">
+    <h2 data-i18n="instant_title">The Moon at the selected instant</h2>
+    <table class="data" id="instant-table"></table>
+  </section>
+
+  <!-- Tiempos de oración -->
+  <section class="card">
+    <h2 data-i18n="salat_title">Salat periods <span class="small">(astronomical definition)</span></h2>
+    <div class="row">
+      <select id="salat-method">
+        <option value="mwl" data-i18n="m_mwl">Muslim World League (−18°/−17°)</option>
+        <option value="uaq" selected data-i18n="m_uaq">Umm al-Qura (−18.5° / Maghrib + 90′)</option>
+        <option value="egy" data-i18n="m_egy">Egypt, GAS (−19.5°/−17.5°)</option>
+        <option value="isna">ISNA (−15°/−15°)</option>
+        <option value="krc" data-i18n="m_krc">Univ. of Karachi (−18°/−18°)</option>
+      </select>
+      <select id="salat-asr">
+        <option value="1" selected data-i18n="asr_std">Standard asr (shadow ×1)</option>
+        <option value="2" data-i18n="asr_han">Hanafi asr (shadow ×2)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="salat-map" checked> <span data-i18n="salat_map_lbl">Show the bands on the map</span></label>
+    </div>
+    <div class="legend">
+      <span><i style="background:rgba(255,213,79,.85)"></i>Dhuhr</span>
+      <span><i style="background:rgba(255,152,0,.85)"></i>Asr</span>
+      <span><i style="background:rgba(239,83,80,.85)"></i>Maghrib</span>
+      <span><i style="background:rgba(126,87,194,.9)"></i>Isha</span>
+      <span data-i18n="sl_night"><i style="background:rgba(48,63,159,.9)"></i>Late night</span>
+      <span data-i18n="sl_l3"><i style="background:rgba(0,151,167,.85)"></i>Last third</span>
+      <span><i style="background:rgba(38,198,218,.85)"></i>Fajr</span>
+      <span data-i18n="sl_morning">Morning (sunrise→noon): no colour</span>
+    </div>
+    <table class="data" id="salat-table"></table>
+    <p class="hint" data-i18n="salat_hint">Each period is defined by the position of the Sun (angle below the horizon, meridian transit or shadow length); 🌙 means the Moon is above the horizon at the start of the period. The period containing the selected instant is highlighted. Official times may add minutes of caution; at high latitudes some angles are never reached.</p>
+  </section>
+
+  <!-- Mapa global -->
+  <section class="card">
+    <h2 data-i18n="map_title">Global visibility map</h2>
+    <p class="hint" data-i18n="map_hint">Yallop category at every point on the planet for the local evening of the selected date.</p>
+    <div class="row">
+      <select id="map-res">
+        <option value="6" data-i18n="res_fast">Fast (6° grid)</option>
+        <option value="4" selected data-i18n="res_med">Medium (4° grid)</option>
+        <option value="2" data-i18n="res_fine">Fine (2° grid)</option>
+      </select>
+      <button id="map-btn" data-i18n="btn_map">Compute map</button>
+      <button id="map-clear" class="ghost" data-i18n="btn_clear">Clear</button>
+    </div>
+    <div id="map-progress" class="progress hidden"><div id="map-bar"></div></div>
+    <div class="legend">
+      <span data-i18n="ml_a"><i style="background:#00c853"></i>A visible to the naked eye</span>
+      <span data-i18n="ml_b"><i style="background:#aeea00"></i>B perfect conditions</span>
+      <span data-i18n="ml_c"><i style="background:#ffd600"></i>C optical aid to find</span>
+      <span data-i18n="ml_d"><i style="background:#ff9100"></i>D only with optical aid</span>
+      <span data-i18n="ml_e"><i style="background:#ff3d00"></i>E not visible with telescope</span>
+      <span data-i18n="ml_f"><i style="background:#7f0000"></i>F below the Danjon limit</span>
+      <span data-i18n="ml_s"><i style="background:#546e7a"></i>Moon below the horizon at dusk</span>
+      <span data-i18n="ml_n"><i style="background:#37474f"></i>Before conjunction</span>
+    </div>
+  </section>
+
+  <!-- Próximas lunaciones -->
+  <section class="card">
+    <h2 data-i18n="lun_title">Upcoming new moons (geocentric conjunction)</h2>
+    <table class="data" id="lunations-table"></table>
+    <p class="hint" data-i18n="lun_hint">Traditionally the Islamic month begins with the first sighting of the hilal on the evening after the conjunction (ruʾyah), or by calculation depending on the country. Use “View” and step through days to find the first visible evening at your location.</p>
+  </section>
+
+  <!-- Metodología y fuentes -->
+  <section class="card">
+    <details>
+      <summary data-i18n="m_summary"><b>Methodology, glossary and sources</b></summary>
+      <div class="method">
+        <h3 data-i18n="m_glossary_h">Glossary</h3>
+        <ul data-i18n="m_glossary">
+          <li><b>Conjunction (geocentric new moon):</b> the instant when the ecliptic longitudes of the Sun and the Moon coincide. Not observable.</li>
+          <li><b>Moon age:</b> time elapsed since conjunction.</li>
+          <li><b>LAG:</b> minutes between sunset and moonset. If ≤ 0, the hilal is impossible.</li>
+          <li><b>Best time (Tb):</b> Tb = T<sub>sunset</sub> + 4/9·LAG (Yallop 1997).</li>
+          <li><b>ARCL (elongation):</b> arc of light, angular separation Moon–Sun.</li>
+          <li><b>ARCV:</b> arc of vision, difference in altitude Moon–Sun (without refraction).</li>
+          <li><b>DAZ:</b> difference in azimuth Sun–Moon.</li>
+          <li><b>W′:</b> crescent width in arcminutes: W′ = SD′·(1 − cos ARCL).</li>
+          <li><b>q (Yallop):</b> q = [ARCV − (11.8371 − 6.3226·W′ + 0.7319·W′² − 0.1018·W′³)]/10. Categories A–F.</li>
+          <li><b>V (Odeh/ICOP):</b> V = ARCV − (7.1651 − 6.3226·W + 0.7319·W² − 0.1018·W³). Zones A–D.</li>
+          <li><b>Danjon limit:</b> with elongation &lt; ~7° the crescent does not form and is physically unobservable.</li>
+        </ul>
+        <h3 data-i18n="m_conv_h">Calculation conventions</h3>
+        <ul data-i18n="m_conv">
+          <li>Ephemerides: <i>Astronomy Engine</i> (VSOP87 + truncated ELP2000-82, ~1′ accuracy).</li>
+          <li>Yallop’s q: geocentric ARCV (topocentric altitude corrected for parallax) and topocentric W′, evaluated at Tb, as in NAO TN 69.</li>
+          <li>Odeh’s V: topocentric ARCV and W, evaluated at Tb.</li>
+          <li>Sun/moon sets with standard refraction (−0.8333°, upper limb).</li>
+          <li>Displayed altitudes use normal refraction; criterion altitudes do not.</li>
+          <li>Actual visibility also depends on atmospheric extinction, dust, humidity and the local horizon: these criteria are statistical (based on hundreds of real observations).</li>
+          <li>Umm al-Qura and tabular calendars via ICU (Intl). The Islamic day begins at maghrib.</li>
+        </ul>
+        <h3 data-i18n="m_sources_h">Sources</h3>
+        <ul class="sources">
+          <li>Yallop, B.D. (1997). <i>A Method for Predicting the First Sighting of the New Crescent Moon</i>. NAO Technical Note No. 69, HM Nautical Almanac Office, RGO. <a href="https://astro.ukho.gov.uk/" target="_blank" rel="noopener">astro.ukho.gov.uk</a></li>
+          <li>Odeh, M.Sh. (2006). «New Criterion for Lunar Crescent Visibility». <i>Experimental Astronomy</i> 18, 39–64. <a href="https://doi.org/10.1007/s10686-005-9002-5" target="_blank" rel="noopener">doi:10.1007/s10686-005-9002-5</a> · <a href="https://www.icoproject.org/" target="_blank" rel="noopener">ICOP</a></li>
+          <li>Danjon, A. (1936). «Le croissant lunaire». <i>L'Astronomie</i> 50, 57–65 (límite de Danjon).</li>
+          <li>Cross, D. <i>Astronomy Engine</i> (MIT). <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noopener">github.com/cosinekitty/astronomy</a></li>
+          <li>Van Gent, R.H. <i>The Umm al-Qura Calendar of Saudi Arabia</i>. <a href="https://webspace.science.uu.nl/~gent0113/islam/ummalqura.htm" target="_blank" rel="noopener">webspace.science.uu.nl</a></li>
+          <li>HM Nautical Almanac Office: <i>Crescent Moon Visibility</i>. <a href="https://astro.ukho.gov.uk/moonwatch/" target="_blank" rel="noopener">astro.ukho.gov.uk/moonwatch</a></li>
+          <li data-i18n="m_geo">Geocoding: <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener">Nominatim</a> © OpenStreetMap contributors.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  </div><!-- /adv-panel -->
+
+  <footer class="small" data-i18n="footer">This site performs astronomical calculations; the official declaration of the Islamic months rests with each country’s authority (sighting or calculation).</footer>
+</aside>
+
+<noscript>
+  <p>HilalScope is an interactive crescent moon (hilal) visibility calculator that requires JavaScript.
+  It computes the Yallop (NAO TN 69) and Odeh (ICOP) criteria, converts between the Gregorian and
+  Hijri (Umm al-Qura) calendars, shows astronomically defined salat times and generates a global
+  hilal visibility map for any date and location. Enable JavaScript to use it.</p>
+</noscript>
+
+<script src="vendor/astronomy.browser.min.js"></script>
+<script src="vendor/globe.gl.min.js"></script>
+<script src="vendor/tz.js"></script>
+<script src="js/hilal.js?v=3"></script>
+<script src="js/hijri.js?v=3"></script>
+<script src="js/i18n.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
+</body>
+</html>
