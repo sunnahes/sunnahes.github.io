@@ -153,7 +153,18 @@ header .tabs { margin: 0 0 12px; }
 .marker-label { font-size: 10px; color: #fff; background: rgba(0,0,0,.55);
   border-radius: 4px; padding: 0 4px; }
 
+/* Touch devices (body.mobile is set from the user agent in app.js) */
+body.mobile .wheel-hint { display: none; }
+
 @media (max-width: 720px) {
-  #sidebar { width: 100vw; bottom: 40vh; top: auto; max-height: 60vh; border-right: 0;
+  /* Map on the top 40% of the screen, panel on the bottom 60% */
+  #sidebar { width: 100vw; top: 40vh; bottom: 0; border-right: 0;
     border-top: 1px solid var(--sb-border); }
+  #map2d, #globe { height: 40vh; bottom: auto; }
+  #view-toggle { top: 8px; right: 8px; }
+  #view-toggle button, #lang-sel { padding: 8px 10px; }
+  /* 16px prevents the iOS auto-zoom when focusing inputs */
+  input, select, button { font-size: 16px; }
+  input[type=number] { width: 100px; }
+  .nav-day button { flex: 1; }
 }

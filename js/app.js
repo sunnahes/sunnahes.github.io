@@ -10,6 +10,18 @@
   const $ = (id) => document.getElementById(id);
   const DEG = Math.PI / 180;
 
+  // Touch/mobile device per user agent (+ touch points for iPads with a
+  // desktop UA). Drives touch-only tweaks; the layout itself is responsive
+  // via CSS media queries.
+  const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints || 0) > 1;
+  if (IS_MOBILE) document.body.classList.add('mobile');
+
+  // Height available for the map: full viewport on desktop, top 40% on
+  // narrow screens (the sidebar takes the bottom 60%; keep in sync with CSS)
+  const narrowLayout = () => innerWidth <= 720;
+  const mapViewH = () => narrowLayout() ? Math.round(innerHeight * 0.4) : innerHeight;
+
   const CAT_COLORS = {
     A: '#00c853', B: '#aeea00', C: '#ffd600', D: '#ff9100',
     E: '#ff3d00', F: '#7f0000', S: '#546e7a', N: '#37474f', P: '#263238'
@@ -370,7 +382,7 @@
     $('globe').classList.toggle('hidden', v !== '3d');
     if (v === '3d') {
       ensureGlobe().resumeAnimation();
-      G.width(innerWidth).height(innerHeight);
+      G.width(innerWidth).height(mapViewH());
     } else if (G) {
       G.pauseAnimation(); // no WebGL render loop in the 2D view
     }
@@ -382,15 +394,15 @@
     if (G && view === '3d') document.hidden ? G.pauseAnimation() : G.resumeAnimation();
   });
   window.addEventListener('resize', () => {
-    if (view === '3d' && G) G.width(innerWidth).height(innerHeight);
+    if (view === '3d' && G) G.width(innerWidth).height(mapViewH());
     base2d = null;
     renderScene();
   });
 
   // ---------- 2D render (equirectangular) ----------
   function layout2d() {
-    const sbw = innerWidth > 720 ? 420 : 0;
-    const availW = innerWidth - sbw, availH = innerHeight;
+    const sbw = narrowLayout() ? 0 : 420;
+    const availW = innerWidth - sbw, availH = mapViewH();
     const dpr = Math.min(devicePixelRatio || 1, 2);
     canvas.style.left = sbw + 'px';
     canvas.style.width = availW + 'px';
